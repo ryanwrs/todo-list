@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckCircle, Circle, ClipboardList, Pencil, X, Check, AlertCircle, Search, XCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, ClipboardList, Pencil, X, Check, AlertCircle, Search, XCircle, Calendar } from 'lucide-react';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -9,7 +9,31 @@ interface Todo {
   completed: boolean;
   priority: Priority;
   createdAt: number;
+  dueDate: string | null;
 }
+
+/** 返回截止日期的状态：'overdue' | 'today' | 'upcoming' | null */
+function getDueStatus(dueDate: string | null): 'overdue' | 'today' | 'upcoming' | null {
+  if (!dueDate) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (dueDate < today) return 'overdue';
+  if (dueDate === today) return 'today';
+  return 'upcoming';
+}
+
+function formatDueDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  return `${month}月${day}日 ${weekDays[d.getDay()]}`;
+}
+
+const dueStatusConfig = {
+  overdue: { label: '已逾期', textColor: 'text-red-500', bgColor: 'bg-red-50', borderColor: 'border-red-200' },
+  today: { label: '今天到期', textColor: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  upcoming: { label: '', textColor: 'text-gray-400', bgColor: '', borderColor: '' },
+};
 
 const priorityConfig = {
   high: { label: '高优先', color: 'bg-red-500 text-white border-red-500 shadow-md shadow-red-200', dot: 'bg-red-500' },
@@ -24,8 +48,10 @@ function App() {
   });
   const [inputValue, setInputValue] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
+  const [dueDate, setDueDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -41,10 +67,12 @@ function App() {
       completed: false,
       priority,
       createdAt: Date.now(),
+      dueDate: dueDate || null,
     };
     setTodos([newTodo, ...todos]);
     setInputValue('');
     setPriority('medium');
+    setDueDate('');
   };
 
   const toggleTodo = (id: string) => {
@@ -71,22 +99,25 @@ function App() {
   const startEdit = (todo: Todo) => {
     setEditingId(todo.id);
     setEditText(todo.text);
+    setEditDueDate(todo.dueDate || '');
   };
 
   const saveEdit = () => {
     if (editText.trim() === '' || editingId === null) return;
     setTodos(
       todos.map((todo) =>
-        todo.id === editingId ? { ...todo, text: editText.trim() } : todo
+        todo.id === editingId ? { ...todo, text: editText.trim(), dueDate: editDueDate || null } : todo
       )
     );
     setEditingId(null);
     setEditText('');
+    setEditDueDate('');
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditText('');
+    setEditDueDate('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -105,6 +136,7 @@ function App() {
 
   const completedCount = todos.filter((t) => t.completed).length;
   const uncompletedCount = todos.filter((t) => !t.completed).length;
+  const overdueCount = todos.filter((t) => !t.completed && getDueStatus(t.dueDate) === 'overdue').length;
   const totalCount = todos.length;
 
   const filteredTodos = searchQuery.trim()
@@ -113,6 +145,12 @@ function App() {
 
   const sortedTodos = [...filteredTodos].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    // 按截止日期分组：逾期 > 今天 > 将来 > 无截止日期
+    const dueOrder = { overdue: 0, today: 1, upcoming: 2, none: 3 };
+    const aDue = getDueStatus(a.dueDate) || 'none';
+    const bDue = getDueStatus(b.dueDate) || 'none';
+    if (dueOrder[aDue] !== dueOrder[bDue]) return dueOrder[aDue] - dueOrder[bDue];
+    // 同组内按优先级
     const priorityOrder = { high: 0, medium: 1, low: 2 };
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
@@ -168,6 +206,26 @@ function App() {
                 </button>
               ))}
             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500 shrink-0 flex items-center gap-1.5">
+                <Calendar size={14} />
+                截止日期:
+              </span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="flex-1 px-3 py-2 bg-indigo-50 border-2 border-indigo-100 rounded-xl text-gray-700 text-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all duration-200"
+              />
+              {dueDate && (
+                <button
+                  onClick={() => setDueDate('')}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <XCircle size={16} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -200,7 +258,7 @@ function App() {
 
         {/* Stats */}
         <div className="flex gap-4 mb-6 items-stretch">
-          <div className="flex-1 grid grid-cols-2 gap-4">
+          <div className="flex-1 grid grid-cols-3 gap-4">
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-sky-600">{uncompletedCount}</div>
               <div className="text-gray-500 text-sm">待完成</div>
@@ -208,6 +266,10 @@ function App() {
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-green-500">{completedCount}</div>
               <div className="text-gray-500 text-sm">已完成</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-4 text-center">
+              <div className={`text-2xl font-bold ${overdueCount > 0 ? 'text-red-500' : 'text-gray-400'}`}>{overdueCount}</div>
+              <div className="text-gray-500 text-sm">已逾期</div>
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -282,7 +344,9 @@ function App() {
             </div>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {sortedTodos.map((todo) => (
+              {sortedTodos.map((todo) => {
+                const dueStatus = getDueStatus(todo.dueDate);
+                return (
                 <li
                   key={todo.id}
                   className="group flex items-center gap-3 p-4 hover:bg-indigo-50/50 transition-colors duration-200"
@@ -299,22 +363,42 @@ function App() {
                   </button>
                   <div className={`w-2 h-2 rounded-full ${priorityConfig[todo.priority].dot}`} />
                   {editingId === todo.id ? (
-                    <input
-                      type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={handleEditKeyDown}
-                      autoFocus
-                      className="flex-1 px-3 py-1 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-gray-700 focus:outline-none focus:border-indigo-400 transition-all duration-200"
-                    />
+                    <div className="flex-1 flex flex-col gap-2">
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={handleEditKeyDown}
+                        autoFocus
+                        className="px-3 py-1 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-gray-700 focus:outline-none focus:border-indigo-400 transition-all duration-200"
+                      />
+                      <input
+                        type="date"
+                        value={editDueDate}
+                        onChange={(e) => setEditDueDate(e.target.value)}
+                        className="px-3 py-1 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-indigo-400 transition-all duration-200"
+                      />
+                    </div>
                   ) : (
-                    <span
-                      className={`flex-1 text-gray-700 transition-all duration-200 ${
-                        todo.completed ? 'line-through text-gray-400' : ''
-                      }`}
-                    >
-                      {todo.text}
-                    </span>
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                      <span
+                        className={`flex-1 text-gray-700 transition-all duration-200 truncate ${
+                          todo.completed ? 'line-through text-gray-400' : ''
+                        }`}
+                      >
+                        {todo.text}
+                      </span>
+                      {todo.dueDate && !todo.completed && (
+                        <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border ${dueStatusConfig[dueStatus!].bgColor} ${dueStatusConfig[dueStatus!].textColor} ${dueStatusConfig[dueStatus!].borderColor}`}>
+                          {formatDueDate(todo.dueDate)}
+                        </span>
+                      )}
+                      {todo.dueDate && todo.completed && (
+                        <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100">
+                          {formatDueDate(todo.dueDate)}
+                        </span>
+                      )}
+                    </div>
                   )}
                   {editingId === todo.id ? (
                     <div className="flex gap-1">
@@ -348,7 +432,8 @@ function App() {
                     </div>
                   )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
