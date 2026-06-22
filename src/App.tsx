@@ -8,6 +8,8 @@ import { SearchBar } from "./components/SearchBar";
 import { StatsBar } from "./components/StatsBar";
 import { TodoList } from "./components/TodoList";
 import { ConfirmModal } from "./components/ConfirmModal";
+import type { Status,Todo } from "./types";
+
 
 function App() {
   const {
@@ -23,15 +25,31 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status >("all");
+
 
   useEscapeKey(showClearConfirm, () => setShowClearConfirm(false));
   useEscapeKey(deletingId !== null, () => setDeletingId(null));
 
+
+    const filterStatus = (status: Status,todos: Todo[]) => {
+    if (status === "done") {
+      return todos.filter((t) => t.completed);
+    } else if (status === "upcoming") {
+      return todos.filter((t) => !t.completed);
+    } else if (status === "overdue") {
+      return todos.filter(
+        (t) => !t.completed && getDueStatus(t.dueDate) === "overdue",
+      );
+    }
+    return todos;
+  }
+
   const filteredTodos = useMemo(() => {
-    if (!searchQuery.trim()) return todos;
+    if (!searchQuery.trim()) return filterStatus(status,todos);
     const q = searchQuery.trim().toLowerCase();
-    return todos.filter((t) => t.text.toLowerCase().includes(q));
-  }, [todos, searchQuery]);
+    return filterStatus(status,todos.filter((t) => t.text.toLowerCase().includes(q)));
+  }, [todos, searchQuery,status]);
 
   const completedCount = todos.filter((t) => t.completed).length;
   const uncompletedCount = todos.length - completedCount;
@@ -45,6 +63,9 @@ function App() {
       setDeletingId(null);
     }
   };
+
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-100 via-indigo-50 to-purple-100 py-8 px-4">
@@ -63,6 +84,8 @@ function App() {
           totalCount={todos.length}
           onClearCompleted={clearCompleted}
           onClearAll={() => setShowClearConfirm(true)}
+          status={status}
+          statusFilter={setStatus}
         />
         <TodoList
           todos={filteredTodos}
