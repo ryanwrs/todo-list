@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, CheckCircle, Circle, ClipboardList, Pencil, X, Check, AlertCircle, Search, XCircle, Calendar } from 'lucide-react';
+import {useEscapeKey} from './hooks/useEscapeKey';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -50,14 +51,25 @@ function App() {
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const [editText, setEditText] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
+
+useEscapeKey(showClearConfirm,() => {setShowClearConfirm(false)})
+ 
+useEscapeKey(showDeleteConfirm,() => {setShowDeleteConfirm(false);setDeletingId(null)})
+
+
 
   const addTodo = () => {
     if (inputValue.trim() === '') return;
@@ -84,7 +96,8 @@ function App() {
   };
 
   const deleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+    setDeletingId(id);
+    setShowDeleteConfirm(true);
   };
 
   const clearCompleted = () => {
@@ -294,8 +307,8 @@ function App() {
 
         {/* Clear Confirmation Modal */}
         {showClearConfirm && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4" onClick={() => setShowClearConfirm(false)}>
+            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-3 text-amber-500 mb-4">
                 <AlertCircle size={24} />
                 <h3 className="text-lg font-semibold text-gray-800">确认清空</h3>
@@ -437,6 +450,29 @@ function App() {
             </ul>
           )}
         </div>
+
+{showDeleteConfirm && (
+   <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4" onClick={() => setShowDeleteConfirm(false)}>
+      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full " onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 text-amber-500 mb-4">
+          <AlertCircle size={24} />
+          <h3 className="text-lg font-semibold text-gray-800">确认删除</h3>
+        </div>
+        <p className="text-gray-600 mb-6">确定要删除任务吗？此操作无法撤销。</p>
+          <div className="flex gap-3 justify-end">
+            <button className="hover:bg-gray-200 rounded-xl text-gray-500 px-4 py-2 transition-all duration-200 " onClick={()=>{
+              setShowDeleteConfirm(false);
+              setDeletingId(null);
+            }}>取消</button>
+            <button onClick={() => {
+              setTodos(prev => prev.filter(t => t.id !== deletingId))
+              setShowDeleteConfirm(false);
+              setDeletingId(null);
+              }} className="bg-red-500 hover:bg-red-600 transition-all duration-200 rounded-xl text-white px-4 py-2">确认删除</button>
+          </div>
+        </div>
+    </div>
+)}
 
         {/* Footer */}
         <p className="text-center text-gray-400 text-sm mt-6">
