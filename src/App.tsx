@@ -487,13 +487,13 @@ function App() {
                           onChange={(e) => setEditDueDate(e.target.value)}
                           className="px-3 py-1 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-indigo-400 transition-all duration-200"
                         />
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 ">
                           {(["high", "medium", "low"] as Priority[]).map(
                             (p) => (
                               <button
                                 key={p}
                                 onClick={() => setEditingPriority(p)}
-                                className={`flex items-center gap-3 border-2  border-indigo-200  text-gray-700 text-sm font-semibold rounded-lg py-2 px-4 transition-all duration-200  active:scale-95 ${p === editingPriority ? priorityConfig[p].color : "bg-indigo-50 text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600"}`}
+                                className={`flex  flex-1 items-center justify-center gap-3 border-2  border-indigo-200  text-gray-700 text-sm font-semibold rounded-lg py-2 px-4 transition-all duration-200  active:scale-95 ${p === editingPriority ? priorityConfig[p].color : "bg-indigo-50 text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600"}`}
                               >
                                 <span
                                   className={`w-2 h-2 rounded-full ${p !== editingPriority ? priorityConfig[p].dot : "bg-white/70"}`}
