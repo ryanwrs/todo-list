@@ -24,32 +24,70 @@ export function StatsBar({
   return (
     <div className="flex gap-4 mb-6 items-stretch">
       <div className="flex-1 grid grid-cols-4 gap-4">
-         <button className={`bg-white rounded-xl shadow p-4 text-center ${status === 'all' ? 'bg-indigo-400 opacity-90' : ''}` } onClick={()=>statusFilter('all')}>
-          <div className="text-2xl font-bold text-indigo-500">
-            {totalCount}
-          </div>
-          <div className="text-gray-500 text-sm">全部</div>
-        </button>
-        <button className={`bg-white rounded-xl shadow p-4 text-center ${status === 'upcoming' ? 'bg-indigo-400 opacity-90' : ''}` } onClick={()=>statusFilter('upcoming')}>
-          <div className="text-2xl font-bold text-sky-600">
-            {uncompletedCount}
-          </div>
-          <div className="text-gray-500 text-sm">待完成</div>
-        </button>
-        <button className={`bg-white rounded-xl shadow p-4 text-center ${status === 'done' ? 'bg-indigo-400 opacity-90' : ''}` }  onClick={()=>statusFilter('done')}>
-          <div className="text-2xl font-bold text-green-500">
-            {completedCount}
-          </div>
-          <div className="text-gray-500 text-sm">已完成</div>
-        </button>
-        <button className={`bg-white rounded-xl shadow p-4 text-center ${status === 'overdue' ? 'bg-indigo-400 opacity-90' : ''}` } onClick={()=>statusFilter('overdue')}>
-          <div
-            className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-500" : "text-gray-400"}`}
+         <button
+            onClick={() => statusFilter("all")}
+            className={`rounded-xl shadow p-4 text-center transition-all duration-200 cursor-pointer ${
+              status === "all"
+                ? "ring-2 ring-indigo-400 shadow-md"
+                : "bg-white hover:shadow-md hover:bg-indigo-50 hover:scale-[1.02]"
+            }`}
           >
-            {overdueCount}
-          </div>
-          <div className="text-gray-500 text-sm">已逾期</div>
-        </button>
+            <div className="text-2xl font-bold text-indigo-500">{totalCount}</div>
+            <div
+              className={`text-sm ${status === "all" ? "text-indigo-500" : "text-gray-500"}`}
+            >
+              全部
+            </div>
+          </button>
+          <button
+            onClick={() => statusFilter("upcoming")}
+            className={`rounded-xl shadow p-4 text-center transition-all duration-200 cursor-pointer ${
+              status === "upcoming"
+                ? "ring-2 ring-indigo-400 shadow-md"
+                : "bg-white hover:shadow-md hover:bg-indigo-50 hover:scale-[1.02]"
+            }`}
+          >
+            <div className="text-2xl font-bold text-sky-600">{uncompletedCount}</div>
+            <div
+              className={`text-sm ${status === "upcoming" ? "text-sky-600" : "text-gray-500"}`}
+            >
+              待完成
+            </div>
+          </button>
+          <button
+            onClick={() => statusFilter("done")}
+            className={`rounded-xl shadow p-4 text-center transition-all duration-200 cursor-pointer ${
+              status === "done"
+                ? "ring-2 ring-indigo-400 shadow-md"
+                : "bg-white hover:shadow-md hover:bg-indigo-50 hover:scale-[1.02]"
+            }`}
+          >
+            <div className="text-2xl font-bold text-green-500">{completedCount}</div>
+            <div
+              className={`text-sm ${status === "done" ? "text-green-500" : "text-gray-500"}`}
+            >
+              已完成
+            </div>
+          </button>
+          <button
+            onClick={() => statusFilter("overdue")}
+            className={`rounded-xl shadow p-4 text-center transition-all duration-200 cursor-pointer ${
+              status === "overdue"
+                ? "ring-2 ring-indigo-400 shadow-md"
+                : "bg-white hover:shadow-md hover:bg-indigo-50 hover:scale-[1.02]"
+            }`}
+          >
+            <div
+              className={`text-2xl font-bold ${overdueCount > 0 ? "text-red-500" : "text-gray-400"}`}
+            >
+              {overdueCount}
+            </div>
+            <div
+              className={`text-sm ${status === "overdue" ? (overdueCount > 0 ? "text-red-500" : "text-gray-400") : "text-gray-500"}`}
+            >
+              已逾期
+            </div>
+          </button>
       </div>
       <div className="flex flex-col gap-2">
         {completedCount > 0 && (
